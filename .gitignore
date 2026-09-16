@@ -4,13 +4,8 @@ report/
 presentation_en/
 assets/
 
-FAQ.md
 README.md
-PROJECT_INFO.md*
-generate_*
-olap_demo_plan.md
-slides_draft.md
-.claude/
+
 .vscode/
 __pycache__/
 *.pyc

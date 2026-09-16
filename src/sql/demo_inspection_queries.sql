@@ -2,7 +2,7 @@
 --  DEMO INSPECTION QUERIES — DWH & ELT ARCHITECTURE
 --
 --  Questo file contiene una selezione di query significative ordinate per
-32: --  livello architetturale. Utile per mostrare il funzionamento interno
+--  livello architetturale. Utile per mostrare il funzionamento interno
 --  dell'ELT, il log degli scarti (Data Quality) e il Data Warehouse.
 -- =====================================================================
 
