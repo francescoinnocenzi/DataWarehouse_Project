@@ -149,7 +149,6 @@ ORDER  BY all_causes DESC NULLS LAST;
 --     Air quality is rolled up from city to country grain, then joined to
 --     MORTALITY and ECONOMY on the conformed (country, time) keys.
 --     One row combines all four original data sources.
---
 --     population is NOT reported: it is additive over geography, but the
 --     ECONOMY source has gaps (RUS reports population only for 2010-2012 and
 --     2014), so a regional SUM is not comparable across years - one missing

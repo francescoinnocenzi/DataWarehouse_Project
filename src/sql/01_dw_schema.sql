@@ -52,7 +52,7 @@ CREATE TABLE dim_time (
     CONSTRAINT ck_year CHECK (year BETWEEN 1900 AND 2100)
 );
 
--- Cause of death (star). Approach 2a: OPTIONAL dimension.
+-- Cause of death (star). OPTIONAL dimension.
 -- Only the three SPECIFIC, mutually-exclusive causes live here; the
 -- 'All causes' total is NOT a member of this dimension. In the fact table
 -- an all-causes event has key_cause = NULL (see mortality).
@@ -122,7 +122,6 @@ CREATE TABLE economy (
 );
 
 -- Grain: one country, year, sex and cause of death.
--- Approach 2a
 --   key_cause valued  -> event for one of the three specific causes
 --   key_cause NULL     -> the 'All causes' total (identified by the other
 --                         three dimensions only).
@@ -174,7 +173,7 @@ CREATE INDEX ix_mort_sex          ON mortality   (key_sex);
 INSERT INTO dim_sex (sex) VALUES
     ('ALL'), ('FEMALE'), ('MALE');
 
--- Only the three SPECIFIC causes are dimension members (Approach 2a).
+-- Only the three SPECIFIC causes are dimension members.
 -- 'All causes' is loaded by the ETL as fact rows with key_cause = NULL.
 INSERT INTO dim_cause (cause, cause_group) VALUES
     ('Circulatory diseases',  'cardiopulmonary'),

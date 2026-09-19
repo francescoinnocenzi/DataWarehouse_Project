@@ -1,23 +1,18 @@
--- =====================================================================
 --  DEMO INSPECTION QUERIES — DWH & ELT ARCHITECTURE
---
---  Questo file contiene una selezione di query significative ordinate per
---  livello architetturale. Utile per mostrare il funzionamento interno
---  dell'ELT, il log degli scarti (Data Quality) e il Data Warehouse.
--- =====================================================================
-
 
 -- =====================================================================
---  1. LIVELLO STAGING (Dati Grezzi "Source-Faithful")
+--  1. STAGING LAYER (Raw "Source-Faithful" Data)
 -- =====================================================================
 
--- 1.1 Ispezione delle stringhe composite non elaborate Eurostat (dims)
--- Mostra come la colonna dims unisca più dimensioni separate da virgole (freq, unit, na_item, geo).
+-- 1.1 Inspection of raw composite strings from Eurostat (dims column)
+-- Shows how the 'dims' column combines multiple dimensions separated by commas (freq, unit, na_item, geo).
+-- This highlights the need for data cleaning and extraction in the next tier.
 SELECT dims, "2010", "2015", "2020"
 FROM   staging.stg_eurostat_gdp
 LIMIT 5;
 
--- 1.2 Ispezione dei flag Eurostat (simboli come ':', ': b', o valori testuali sporchi)
+-- 1.2 Inspection of Eurostat data flags (symbols like ':', ': b', or dirty textual values)
+-- Demonstrates the presence of non-numeric characters in numeric columns that must be cleaned.
 SELECT dims, "2018"
 FROM   staging.stg_eurostat_gdp
 WHERE  "2018" LIKE '%:%' OR "2018" LIKE '%b%'
@@ -25,18 +20,19 @@ LIMIT 5;
 
 
 -- =====================================================================
---  2. LIVELLO DATA QUALITY & REJECT LOG (Audit degli Scarti)
+--  2. DATA QUALITY & REJECT LOG LAYER (Rejection Audit)
 -- =====================================================================
 
--- 2.1 Summary degli scarti per motivo e tabella sorgente
--- Utilizza la vista v_reject_summary alimentata dal log degli scarti.
+-- 2.1 Rejection summary by reason and source table
+-- Uses the 'v_reject_summary' view to aggregate data from the reject log, providing a high-level overview of data quality issues.
 SELECT source_table,
        reject_reason,
        n_rejected,
        example_key
 FROM   reconciled.v_reject_summary;
 
--- 2.2 Dettaglio dei primi 10 scarti registrati con valore grezzo
+-- 2.2 Detail of the first 10 recorded rejections with their raw values
+-- Inspects the actual rejected records and the raw values that caused the failure, allowing for troubleshooting.
 SELECT reject_id,
        source_table,
        reject_reason,
@@ -49,11 +45,12 @@ LIMIT 10;
 
 
 -- =====================================================================
---  3. LIVELLO RECONCILED (Tabelle Riconciliate e Normalizzate 3NF)
+--  3. RECONCILED LAYER (Reconciled and 3NF Normalized Tables)
 -- =====================================================================
 
--- 3.1 Risultato dell'Unpivoting e del FULL JOIN PIL + Popolazione
--- Mostra i dati di PIL e Popolazione affiancati per paese e anno.
+-- 3.1 Result of Unpivoting and FULL JOIN of GDP + Population
+-- Shows GDP and Population data aligned side-by-side by country and year. 
+-- The wide format from Eurostat has been successfully unpivoted into a long format.
 SELECT country_iso3,
        year,
        gdp_per_capita,
@@ -62,7 +59,8 @@ FROM   reconciled.rec_economy
 WHERE  country_iso3 = 'ITA'
 ORDER  BY year ASC;
 
--- 3.2 Qualità dell'aria con medie aggregate per città e anno
+-- 3.2 Air Quality with aggregated averages by city and year
+-- Shows the cleaned and consolidated air quality metrics grouped at the city-year grain.
 SELECT country_iso3,
        city_name,
        year,
@@ -75,10 +73,11 @@ ORDER  BY year ASC;
 
 
 -- =====================================================================
---  4. LIVELLO DATA WAREHOUSE (Schema a Stella in `public`)
+--  4. DATA WAREHOUSE LAYER (Star Schema in the `public` schema)
 -- =====================================================================
 
--- 4.1 Verifica della sostituzione delle chiavi naturali con le chiavi surrogate (dim_country e dim_time)
+-- 4.1 Verification of natural key replacement with surrogate keys (dim_country and dim_time)
+-- Shows how the fact table (economy) is linked to dimension tables using integer surrogate keys instead of natural keys.
 SELECT e.key_country,
        dc.country_iso3,
        dc.country_name,
@@ -92,7 +91,8 @@ JOIN   dim_time    dt ON dt.key_time    = e.key_time
 WHERE  dc.country_iso3 = 'ITA'
 ORDER  BY dt.year ASC;
 
--- 4.2 Risoluzione delle omonimie tra città appartenenti a paesi diversi
+-- 4.2 Resolution of city name homonyms across different countries
+-- Demonstrates how surrogate keys successfully distinguish cities with the exact same name that belong to different countries (e.g., Victoria).
 SELECT dci.key_city,
        dci.city_name,
        dc.country_iso3,
@@ -102,7 +102,8 @@ JOIN   dim_country dc ON dc.key_country = dci.key_country
 WHERE  dci.city_name IN ('Limburg', 'Bratislava', 'Victoria')
 ORDER  BY dci.city_name, dc.country_name;
 
--- 4.3 Query Analitica OLAP (Drill-Across: Inquinamento PM2.5 vs Mortalità)
+-- 4.3 Analytical OLAP Query (Drill-Across: PM2.5 Pollution vs Mortality)
+-- A cross-fact analysis joining Air Quality and Mortality on the conformed dimensions (Geography and Time) to find correlations.
 SELECT dc.country_name,
        dt.year,
        ROUND(AVG(aq.avg_pm25), 2) AS avg_pm25_country,
@@ -117,4 +118,3 @@ GROUP  BY dc.country_name, dt.year
 HAVING AVG(aq.avg_pm25) IS NOT NULL AND AVG(m.sdr) IS NOT NULL
 ORDER  BY avg_pm25_country DESC
 LIMIT 10;
-

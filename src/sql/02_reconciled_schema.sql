@@ -1,4 +1,3 @@
--- =====================================================================
 --  RECONCILED LAYER — DDL
 --
 --  Three-tier architecture:
@@ -16,7 +15,6 @@
 --    * The warehouse is loaded exclusively from reconciled (see load_dw.sql).
 --      No object in the public schema ever reads from staging.
 --
---  Target DBMS: PostgreSQL
 -- =====================================================================
 
 DROP SCHEMA IF EXISTS staging    CASCADE;
@@ -138,11 +136,8 @@ CREATE TABLE staging.stg_hfamdb_mortality (
 
 -- =====================================================================
 --  2. STAGING — RECONCILIATION MAPPING TABLES
---
---  These replace the Python dictionaries of the previous ETL. Holding them
---  as relations rather than code means the reconciliation rules are
---  queryable, auditable and joinable, and a new country is a row rather
---  than a commit.
+--  Holding them as relations rather than code means the reconciliation rules are
+--  queryable, auditable and joinable.
 -- =====================================================================
 
 -- Eurostat 2-letter geo code -> ISO 3166-1 alpha-3.
@@ -196,10 +191,7 @@ CREATE TABLE staging.map_cause (
 -- =====================================================================
 --  3. RECONCILED — INTEGRATED NORMALISED LAYER
 --
---  Natural keys throughout (country_iso3, city_name, year). Surrogate keys
---  are a logical-design choice of the warehouse and are introduced only in
---  the public schema, so the reconciled layer stays independent of it and
---  could feed a second data mart unchanged.
+--  Natural keys throughout (country_iso3, city_name, year).
 --
 --  Every table here satisfies its declared grain as a primary key. That is
 --  the contract of this layer: whatever duplication the sources contain has
