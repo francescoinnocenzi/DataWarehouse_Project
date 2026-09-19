@@ -104,10 +104,14 @@ def plot_q6_drill_across(conn, output_dir):
     
     plt.title('Q6: PM2.5 vs GDP per Capita by Sub-Region (2019)')
     
-    # Combined legend
+    # Combined legend inside the plot
     lines_1, labels_1 = ax1.get_legend_handles_labels()
     lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper center', ncol=2)
+    
+    # Ensure there is enough space at the top for the legend
+    ax1.set_ylim(0, df_2019['pm25'].max() * 1.25)
+    ax2.set_ylim(0, df_2019['gdp_per_capita'].max() * 1.25)
     
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'q6_drill_across.png'))
