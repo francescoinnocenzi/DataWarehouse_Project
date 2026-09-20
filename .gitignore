@@ -3,8 +3,6 @@ study/
 report/
 presentation_en/
 
-README.md
-
 .vscode/
 __pycache__/
 *.pyc
