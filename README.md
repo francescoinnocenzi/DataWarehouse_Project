@@ -72,6 +72,10 @@ The constellation schema in the `public` schema ([`01_dw_schema.sql`](src/sql/01
 
 ## 4. Dimensional Model
 
+Before writing any DDL, each fact was modeled conceptually as a **Dimensional Fact Model (DFM)** — a fact with its measures and the dimensions/hierarchies it can be analyzed by, independent of any specific DBMS. The three individual DFMs (air quality, mortality, economy) were then merged into a single **fact constellation**, since it is exactly the DFM step that surfaces which dimensions are shared (conformed) across facts and can therefore support drill-across analysis:
+
+![Fact constellation DFM](assets/diagrams/dfm_constellation.svg)
+
 ### 4.1 Dimensions
 
 | Dimension | Type | Description |
@@ -97,6 +101,10 @@ Geography is **snowflaked** (`dim_city → dim_country → dim_region`) because 
 | `mortality` | country × year × sex × cause (optional) | `sdr` (age-standardized death rate) | Surrogate `fact_id` PK + two partial unique indexes enforce the grain around the nullable `key_cause` |
 
 **Rate measures (`sdr`, `gdp_per_capita`) must always be aggregated with `AVG`, never `SUM`.**
+
+The DFM was then translated into a **starflake schema**: a star schema overall (one row per fact, denormalized flat dimensions for time/cause/sex), except for the geography branch, which is snowflaked into `dim_city → dim_country → dim_region` for the reasons above. This hybrid is the standard trade-off between the query simplicity of a pure star schema and the reduced redundancy of a snowflake, applied only where the redundancy would actually have been costly:
+
+![Logical starflake schema](assets/diagrams/logical_schema.svg)
 
 ## 5. Data Quality & Reject Log
 
