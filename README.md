@@ -134,8 +134,7 @@ DataWarehouse_Project/
 ├── assets/
 │   ├── diagrams/                        # DFM & logical schema diagrams (SVG)
 │   └── drawio/                          # Editable draw.io sources
-├── presentation/                        # Slides (PDF)
-└── speech/                              # Presentation script (LaTeX + PDF)
+└── presentation/                        # Slides (PDF)
 ```
 
 ## 7. Setup & Usage
