@@ -74,7 +74,7 @@ The constellation schema in the `public` schema ([`01_dw_schema.sql`](src/sql/01
 
 Before writing any DDL, each fact was modeled conceptually as a **Dimensional Fact Model (DFM)** — a fact with its measures and the dimensions/hierarchies it can be analyzed by, independent of any specific DBMS. The three individual DFMs (air quality, mortality, economy) were then merged into a single **fact constellation**, since it is exactly the DFM step that surfaces which dimensions are shared (conformed) across facts and can therefore support drill-across analysis:
 
-![Fact constellation DFM](assets/diagrams/dfm_constellation.svg)
+![Fact constellation DFM](assets/diagrams/dfm_constellation.pdf)
 
 ### 4.1 Dimensions
 
