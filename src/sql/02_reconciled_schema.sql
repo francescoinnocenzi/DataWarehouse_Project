@@ -11,8 +11,8 @@
 --      and copies the columns verbatim into staging as TEXT.
 --    * Every SEMANTIC transformation — key reconciliation, value cleaning,
 --      geographic filtering, grain de-duplication, aggregation — happens in
---      SQL between staging and reconciled (see etl_reconciled.sql).
---    * The warehouse is loaded exclusively from reconciled (see load_dw.sql).
+--      SQL between staging and reconciled (see 03_elt_reconciled.sql).
+--    * The warehouse is loaded exclusively from reconciled (see 04_load_dw.sql).
 --      No object in the public schema ever reads from staging.
 --
 -- =====================================================================
@@ -73,7 +73,7 @@ CREATE TABLE staging.stg_who_aap (
 -- in the source TSV (1975 to 2025). Filtering for the 2010-2020 analysis
 -- window is deferred to the staging -> reconciled step in SQL.
 --
--- The wide-to-long unpivot is performed in SQL — see etl_reconciled.sql.
+-- The wide-to-long unpivot is performed in SQL — see 03_elt_reconciled.sql.
 -- ---------------------------------------------------------------------
 CREATE TABLE staging.stg_eurostat_gdp (
     dims    TEXT,            -- 'A,CLV10_EUR_HAB,B1GQ,IT'
@@ -331,7 +331,7 @@ CREATE INDEX ix_rec_mort_cause  ON reconciled.rec_mortality   (cause);
 
 -- =====================================================================
 --  6. SEED DATA FOR THE MAPPING TABLES
---     Static reference data, loaded here rather than by the ETL so that the
+--     Static reference data, loaded here rather than by the ELT so that the
 --     reconciliation rules live in one reviewable place.
 -- =====================================================================
 

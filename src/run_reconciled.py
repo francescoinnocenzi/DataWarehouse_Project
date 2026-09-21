@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Orchestrator for the Reconciled Layer 3-Tier ETL Pipeline.
+Orchestrator for the Reconciled Layer 3-Tier ELT Pipeline.
 
 This script:
-1. Executes `sql/dw_schema.sql` to ensure Data Warehouse tables exist.
-2. Executes `reconciled_layer/reconciled_schema.sql` (DDL & Mapping seed data).
+1. Executes `src/sql/01_dw_schema.sql` to ensure Data Warehouse tables exist.
+2. Executes `src/sql/02_reconciled_schema.sql` (DDL & Mapping seed data).
 3. Loads raw source files (Excel, TSV, CSV) into PostgreSQL `staging` as TEXT / NULL.
-4. Executes `reconciled_layer/etl_reconciled.sql` (Semantic transformations -> `reconciled`).
-5. Executes `reconciled_layer/load_dw.sql` (Populates Star Schema -> `public`).
+4. Executes `src/sql/03_elt_reconciled.sql` (Semantic transformations -> `reconciled`).
+5. Executes `src/sql/04_load_dw.sql` (Populates Star Schema -> `public`).
 
 Usage:
-    python reconciled_layer/run_reconciled.py
+    python src/run_reconciled.py
 """
 
 import os
@@ -186,17 +186,17 @@ def main():
     
     dw_sql       = os.path.join(base_dir, "sql", "01_dw_schema.sql")
     schema_sql   = os.path.join(base_dir, "sql", "02_reconciled_schema.sql")
-    etl_sql      = os.path.join(base_dir, "sql", "03_etl_reconciled.sql")
+    elt_sql      = os.path.join(base_dir, "sql", "03_elt_reconciled.sql")
     load_sql     = os.path.join(base_dir, "sql", "04_load_dw.sql")
 
     with psycopg2.connect(**DB) as conn:
         run_sql_file(conn, dw_sql)
         run_sql_file(conn, schema_sql)
         load_staging(conn)
-        run_sql_file(conn, etl_sql)
+        run_sql_file(conn, elt_sql)
         run_sql_file(conn, load_sql)
 
-    print("\n[SUCCESS] Reconciled Layer 3-Tier ETL execution complete!")
+    print("\n[SUCCESS] Reconciled Layer 3-Tier ELT execution complete!")
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ ORDER  BY r.sub_region, t.year;
 
 
 -- ---------------------------------------------------------------------
--- Q1b. ROLL-UP ALONG THE CROSS-DIMENSIONAL ATTRIBUTE (EU Membership)
+-- Q2. ROLL-UP ALONG THE CROSS-DIMENSIONAL ATTRIBUTE (EU Membership)
 --      air_quality is at CITY grain and economy at COUNTRY grain: the two are
 --      aggregated to a common country-year grain in the CTE before the roll-up,
 --      otherwise the GDP would be replicated once per city (fan trap).
@@ -59,12 +59,12 @@ JOIN        dim_time           t ON t.key_time    = cy.key_time
 LEFT  JOIN  economy            e ON e.key_country = cy.key_country
                                 AND e.key_time    = cy.key_time
 GROUP  BY s.eu_membership, t.year
-HAVING COUNT(DISTINCT cy.key_country) >= 3   -- drop years with a degenerate panel
+HAVING COUNT(DISTINCT cy.key_country) >= 3 
 ORDER  BY s.eu_membership, t.year;
 
 
 -- ---------------------------------------------------------------------
--- Q2. ROLL-UP with the SQL ROLLUP operator
+-- Q3. ROLL-UP with the SQL ROLLUP operator
 --     Produces region-year detail, region subtotals and the grand total
 --     in a single result set (the classic OLAP cube margins).
 -- ---------------------------------------------------------------------
@@ -81,7 +81,7 @@ ORDER  BY sub_region, year;
 
 
 -- ---------------------------------------------------------------------
--- Q3. DRILL-DOWN
+-- Q4. DRILL-DOWN
 --     From the aggregate cause group down to the individual cause,
 --     for a single region. Excludes the 'All causes' total.
 -- ---------------------------------------------------------------------
@@ -102,7 +102,7 @@ ORDER  BY ca.cause_group, ca.cause, t.year;
 
 
 -- ---------------------------------------------------------------------
--- Q4. SLICE AND DICE
+-- Q5. SLICE AND DICE
 --     Slice: cause = respiratory, sex = MALE, region = Eastern Europe.
 --     Dice:  years restricted to 2015-2020.
 -- ---------------------------------------------------------------------
@@ -123,7 +123,7 @@ ORDER  BY co.country_iso3, t.year;
 
 
 -- ---------------------------------------------------------------------
--- Q5. PIVOTING
+-- Q6. PIVOTING
 --     The cause dimension is rotated into columns, and the sex dimension
 --     is used to compare male and female rates side by side.
 -- ---------------------------------------------------------------------
@@ -145,7 +145,7 @@ ORDER  BY all_causes DESC NULLS LAST;
 
 
 -- ---------------------------------------------------------------------
--- Q6. DRILL-ACROSS  (the unified cross-source analysis)
+-- Q7. DRILL-ACROSS  (the unified cross-source analysis)
 --     Air quality is rolled up from city to country grain, then joined to
 --     MORTALITY and ECONOMY on the conformed (country, time) keys.
 --     One row combines all four original data sources.
@@ -195,35 +195,12 @@ ORDER  BY r.sub_region, t.year;
 
 
 -- ---------------------------------------------------------------------
--- Q7. RANKING / comparative analysis
---     Ranks the most polluted countries in 2018 alongside their health and
---     economic context.
---
---     Analytical finding: at country level the correlation between PM2.5 and
---     respiratory SDR is essentially zero, both in 2018 alone (r = -0.037,
---     n = 30) and pooled over 2010-2019 (r = -0.049, n = 249). The null result
---     is not a data artefact but a modelling one, and the primary explanation
---     comes from the warehouse itself:
---       1. Grain mismatch / ecological fallacy: PM2.5 is measured at CITY
---          grain and averaged up to country to meet the national SDR. That
---          average discards exactly the information that matters - who lives
---          where - and attributes urban pollution to a largely rural population.
---     Secondary explanations, in decreasing order of confidence:
---       2. SDR is age-standardised, so it removes the very channel through
---          which chronic exposure raises mortality (an older population).
---       3. Chronic-exposure mortality lags exposure by 10-20 years; the
---          analysis window is 10.
---       4. Cause-of-death coding varies with health-system quality, which
---          correlates with GDP (cf. DNK: lowest PM2.5 and highest SDR of the
---          top 20).
---
---     NB: some top-ranked countries have gaps in the other sources (BIH has no
---     mortality data, UKR no Eurostat GDP). Rows are kept rather than dropped,
---     so the coverage of the integration stays visible instead of hidden.
---
---     key_time is carried out of the CTE so that ECONOMY and MORTALITY can be
---     joined on the surrogate key directly, with no second lookup into
---     dim_time by year.
+-- Q8. RANKING / comparative analysis
+--     Ranks the most polluted countries in 2018 alongside SDR and GDP.
+--     Finding: correlation between PM2.5 and respiratory SDR is ~0,
+--     mainly due to grain mismatch (ecological fallacy: city PM2.5 vs
+--     national SDR) and age-standardisation removing demographic effects.
+--     LEFT JOINs keep rows with data gaps (e.g. BIH, UKR) visible.
 -- ---------------------------------------------------------------------
 
 WITH country_year AS (
@@ -259,42 +236,3 @@ LEFT JOIN  mortality   m  ON m.key_country = cy.key_country
 WHERE  cy.pm25 IS NOT NULL
 ORDER  BY cy.pm25 DESC
 LIMIT  20;
-
---  NOTA su sub_region e grano:
---  Aggiungere sub_region alla SELECT obbliga ad aggiungerla anche alla GROUP BY,
---  ma il grano NON cambia: un paese appartiene a una sola sub-regione, quindi il
---  raggruppamento non si scompone e la CTE produce comunque una riga per paese.
---  Serve solo ad arricchire il report (es. ITA -> Southern Europe).
---  Lo stesso vale per key_time: e' in corrispondenza uno-a-uno con year.
-
---  NOTA: Anche se aggreghiamo a livello di sub-region (invece di country)
---  Il livello di aggregazione (grano) NON cambia: La CTE produce comunque 1 sola riga per Paese.
---  Serve per arricchire il report: Estraiamo sub_region solo per mostrare nel report a quale area d'Europa appartiene ogni Paese in classifica (es. ITA ➔ Southern Europe).
---  Regola SQL: In SQL, per mostrare la colonna sub_region nella SELECT, dobbiamo per forza scriverla anche nel GROUP BY. Poiché 1 Paese sta in 1 sola Sub-Regione, il raggruppamento non si scompone.
-
-
--- ---------------------------------------------------------------------
--- Q8. TEMPORAL TREND
---     Change in pollution and respiratory mortality between the start and
---     the end of the analysis window, by sub-region.
--- ---------------------------------------------------------------------
-WITH by_region_year AS (
-    SELECT r.sub_region,
-           t.year,
-           AVG(aq.avg_pm25) AS pm25
-    FROM   air_quality aq
-    JOIN   dim_city    ci ON ci.key_city    = aq.key_city
-    JOIN   dim_country co ON co.key_country = ci.key_country
-    JOIN   dim_region  r  ON r.key_region   = co.key_region
-    JOIN   dim_time    t  ON t.key_time     = aq.key_time
-    WHERE  t.year IN (2013, 2019)
-    GROUP  BY r.sub_region, t.year
-)
-SELECT sub_region,
-       ROUND(MAX(pm25) FILTER (WHERE year = 2013)::numeric, 2) AS pm25_2013,
-       ROUND(MAX(pm25) FILTER (WHERE year = 2019)::numeric, 2) AS pm25_2019,
-       ROUND((MAX(pm25) FILTER (WHERE year = 2019)
-            - MAX(pm25) FILTER (WHERE year = 2013))::numeric, 2) AS change
-FROM   by_region_year
-GROUP  BY sub_region
-ORDER  BY change;

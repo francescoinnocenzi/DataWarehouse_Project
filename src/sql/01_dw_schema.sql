@@ -25,7 +25,7 @@ CREATE TABLE dim_region (
 );
 
 -- Primary dimension table: referenced directly by the country-grain facts.
--- country_iso3 is the canonical key produced by the ETL reconciliation of
+-- country_iso3 is the canonical key produced by the ELT reconciliation of
 -- WHO ISO3 codes and Eurostat 2-letter geo codes (EL->GRC, UK->GBR, ...).
 CREATE TABLE dim_country (
     key_country   SERIAL       PRIMARY KEY,
@@ -167,14 +167,14 @@ CREATE INDEX ix_mort_sex          ON mortality   (key_sex);
 
 -- ---------------------------------------------------------------------
 -- 4. SEED DATA FOR THE SMALL STATIC DIMENSIONS
---    (the remaining dimensions are populated by the ETL)
+--    (the remaining dimensions are populated by the ELT)
 -- ---------------------------------------------------------------------
 
 INSERT INTO dim_sex (sex) VALUES
     ('ALL'), ('FEMALE'), ('MALE');
 
 -- Only the three SPECIFIC causes are dimension members.
--- 'All causes' is loaded by the ETL as fact rows with key_cause = NULL.
+-- 'All causes' is loaded by the ELT as fact rows with key_cause = NULL.
 INSERT INTO dim_cause (cause, cause_group) VALUES
     ('Circulatory diseases',  'cardiopulmonary'),
     ('Respiratory diseases',  'cardiopulmonary'),

@@ -1,10 +1,10 @@
 -- =====================================================================
---  ETL: STAGING -> RECONCILED (All Branches)
+--  ELT: STAGING -> RECONCILED (All Branches)
 --
 --  This file contains the semantic transformations from raw staging tables
 --  into the normalised 3NF reconciled layer.
 --
---  Requires: reconciled_schema.sql, and staging populated by etl.py.
+--  Requires: 02_reconciled_schema.sql, and staging populated by run_reconciled.py.
 -- =====================================================================
 
 BEGIN;
@@ -100,6 +100,8 @@ WHERE  m.geo_code IS NULL;
 --  3. RECONCILED ECONOMY
 -- =====================================================================
 
+-- Unpivot: Eurostat stores years as wide columns (1975-2025).
+-- CROSS JOIN LATERAL unrolls each column into normalized (country, year, gdp) tuples.
 CREATE TEMP TABLE tmp_gdp AS
 SELECT m.country_iso3,
        y.year,
@@ -150,7 +152,8 @@ WHERE  TRIM(SPLIT_PART(s.dims, ',', 3)) = 'TOTAL' -- Total age
   AND  TRIM(SPLIT_PART(s.dims, ',', 4)) = 'T'; -- All genders
 
 INSERT INTO reconciled.rec_economy (country_iso3, year, gdp_per_capita, population)
--- Deduplicate using average in case of multiple entries
+-- FULL JOIN: GDP and population have different Eurostat coverage; keeps rows present in either.
+-- GROUP BY + AVG: deduplicates multiple entries per country-year into a single reconciled row.
 SELECT COALESCE(g.country_iso3, p.country_iso3)  AS country_iso3,
        COALESCE(g.year,         p.year)          AS year,
        AVG(g.gdp_per_capita)                     AS gdp_per_capita,
@@ -172,6 +175,8 @@ HAVING AVG(g.gdp_per_capita) IS NOT NULL
 -- =====================================================================
 
 CREATE TEMP TABLE tmp_raw_aq AS
+-- Materialized CTE: SQL does not guarantee WHERE is evaluated before SELECT casts.
+-- Regex-filtering in the CTE ensures casts (::smallint, ::numeric) only run on valid tokens.
 WITH clean_aq AS (
     SELECT TRIM(iso3)                            AS country_iso3,
            TRIM(city_or_locality)                AS city_name,
@@ -233,6 +238,8 @@ HAVING AVG(avg_pm25) IS NOT NULL
 --  5. RECONCILED MORTALITY
 -- =====================================================================
 
+-- Materialized CTE: SQL does not guarantee WHERE is evaluated before SELECT casts.
+-- Regex-filtering in the CTE ensures casts (::smallint, ::numeric) only run on valid tokens.
 WITH clean_mort AS (
     SELECT TRIM(m.country) AS country_iso3,
            TRIM(m.year)    AS year_txt,

@@ -10,7 +10,7 @@ BEGIN;
 -- TRUNCATE existing tables and reset surrogate key sequences for idempotency
 TRUNCATE air_quality, economy, mortality, country_eu_status;
 TRUNCATE dim_city, dim_country, dim_time RESTART IDENTITY CASCADE;
--- Note: dim_region, dim_sex and dim_cause contain seed data initialized by dw_schema.sql.
+-- Note: dim_region, dim_sex and dim_cause contain seed data initialized by 01_dw_schema.sql.
 
 -- 1. DIMENSION REGION
 INSERT INTO dim_region (sub_region, who_region)

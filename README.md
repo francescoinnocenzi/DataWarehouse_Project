@@ -50,7 +50,7 @@ The pipeline follows a strict 3-layer ELT design, chosen over a direct source-to
 
 ```
 sources (xlsx/tsv/csv)  →  staging  →  reconciled  →  public (Data Warehouse)
-        Python load                      SQL ETL            SQL load
+        Python load                      SQL ELT            SQL load
 ```
 
 ### 3.1 Staging Layer
@@ -59,7 +59,7 @@ Source-faithful copy of the raw files: every column is kept as `TEXT`, no semant
 
 ### 3.2 Reconciled Layer
 
-Normalized 3NF layer ([`02_reconciled_schema.sql`](src/sql/02_reconciled_schema.sql), transformed by [`03_etl_reconciled.sql`](src/sql/03_etl_reconciled.sql)):
+Normalized 3NF layer ([`02_reconciled_schema.sql`](src/sql/02_reconciled_schema.sql), transformed by [`03_elt_reconciled.sql`](src/sql/03_elt_reconciled.sql)):
 - Wide-format Eurostat tables (year columns) are **unpivoted** into long format.
 - Natural keys are reconciled across sources (e.g. WHO ISO3 vs. Eurostat 2-letter geo codes: `EL→GRC`, `UK→GBR`).
 - Non-numeric flags (`:`, `b`, etc.) and non-country aggregates (`EA`, `DE_TOT`, ...) are filtered out.
@@ -127,7 +127,7 @@ DataWarehouse_Project/
 │   └── sql/
 │       ├── 01_dw_schema.sql             # DDL for the star/constellation DW schema
 │       ├── 02_reconciled_schema.sql     # DDL for staging + reconciled schemas
-│       ├── 03_etl_reconciled.sql        # Staging → Reconciled transformations
+│       ├── 03_elt_reconciled.sql        # Staging → Reconciled transformations
 │       ├── 04_load_dw.sql               # Reconciled → DW load
 │       ├── olap_queries.sql             # Full OLAP query catalogue (roll-up, drill-down, ...)
 │       └── demo_inspection_queries.sql  # Short 3-query set for live demos
@@ -146,7 +146,7 @@ DataWarehouse_Project/
 # 1. Configure connection (defaults shown)
 export PGHOST=localhost PGPORT=5432 PGDATABASE=DataWarehouse PGUSER=postgres PGPASSWORD=postgres
 
-# 2. Run the full pipeline: schema creation, staging load, ETL, DW load
+# 2. Run the full pipeline: schema creation, staging load, ELT, DW load
 python src/run_reconciled.py
 
 # 3. Generate analysis charts
@@ -166,13 +166,12 @@ psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f src/sql/demo_inspection_queries.sql
 | # | Operator | Description |
 |---|---|---|
 | Q1 | Roll-up | PM2.5 aggregated from city → sub-region |
-| Q1b | Roll-up | Aggregation along a cross-dimensional attribute (EU membership) |
-| Q2 | Roll-up (`ROLLUP`) | Multi-level subtotals with the SQL `ROLLUP` operator |
-| Q3 | Drill-down | Region → country → city breakdown |
-| Q4 | Slice and dice | Filtered multi-dimensional subset |
-| Q5 | Pivoting | Rows-to-columns reshaping |
-| Q6 | Drill-across | Unified cross-fact analysis (air quality vs. mortality) |
-| Q7 | Ranking | Comparative country/year ranking |
-| Q8 | Temporal trend | Metric evolution over time |
+| Q2 | Roll-up | Aggregation along a cross-dimensional attribute (EU membership) |
+| Q3 | Roll-up (`ROLLUP`) | Multi-level subtotals with the SQL `ROLLUP` operator |
+| Q4 | Drill-down | Cause group → specific cause breakdown |
+| Q5 | Slice and dice | Filtered multi-dimensional subset |
+| Q6 | Pivoting | Rows-to-columns reshaping |
+| Q7 | Drill-across | Unified cross-fact analysis (air quality vs. mortality) |
+| Q8 | Ranking | Comparative country/year ranking |
 
 
