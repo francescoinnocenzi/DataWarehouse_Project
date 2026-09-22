@@ -50,8 +50,8 @@ WITH country_yearly AS (
 SELECT s.eu_membership,
        t.year,
        COUNT(DISTINCT cy.key_country)             AS n_countries,
-       ROUND(AVG(cy.pm25)::numeric, 2)            AS pm25,
-       ROUND(AVG(e.gdp_per_capita)::numeric, 0)   AS avg_gdp
+       ROUND(AVG(cy.pm25), 2)            AS pm25,
+       ROUND(AVG(e.gdp_per_capita), 0)   AS avg_gdp
 FROM        country_yearly     cy
 JOIN        country_eu_status  s ON s.key_country = cy.key_country
                                 AND s.key_time    = cy.key_time
@@ -102,9 +102,10 @@ ORDER  BY ca.cause_group, ca.cause, t.year;
 
 
 -- ---------------------------------------------------------------------
--- Q5. SLICE AND DICE
---     Slice: cause = respiratory, sex = MALE, region = Eastern Europe.
---     Dice:  years restricted to 2015-2020.
+-- Q5. DICE
+--     Extracts a sub-cube (Dice) by constraining multiple dimensions:
+--     cause = 'Respiratory diseases', sex = 'MALE',
+--     sub_region = 'Eastern Europe', and year range 2015-2020.
 -- ---------------------------------------------------------------------
 SELECT co.country_iso3,
        t.year,
@@ -176,9 +177,9 @@ SELECT r.sub_region,
        t.year,
        COUNT(DISTINCT a.key_country)            AS n_countries,
        SUM(a.n_cities)                          AS n_cities,
-       ROUND(AVG(a.pm25)::numeric, 2)           AS pm25,
-       ROUND(AVG(re.sdr)::numeric, 2)           AS respiratory_sdr,
-       ROUND(AVG(e.gdp_per_capita)::numeric, 0) AS gdp_per_capita
+       ROUND(AVG(a.pm25), 2)           AS pm25,
+       ROUND(AVG(re.sdr), 2)           AS respiratory_sdr,
+       ROUND(AVG(e.gdp_per_capita), 0) AS gdp_per_capita
 FROM        aq_country a
 JOIN        dim_country co ON co.key_country = a.key_country
 JOIN        dim_region  r  ON r.key_region   = co.key_region
@@ -217,22 +218,25 @@ WITH country_year AS (
     JOIN   dim_time    t  ON t.key_time     = aq.key_time
     WHERE  t.year = 2018
     GROUP  BY co.key_country, co.country_iso3, r.sub_region, t.key_time, t.year
+),
+resp AS (
+    SELECT m.key_country, m.key_time, m.sdr
+    FROM   mortality m
+    JOIN   dim_cause ca ON ca.key_cause = m.key_cause
+    JOIN   dim_sex   s  ON s.key_sex    = m.key_sex
+    WHERE  ca.cause = 'Respiratory diseases' AND s.sex = 'ALL'
 )
 SELECT cy.country_iso3,
        cy.sub_region,
-       ROUND(cy.pm25::numeric, 1)              AS pm25_2018,
-       ROUND(m.sdr, 1)                         AS respiratory_sdr,
+       ROUND(cy.pm25, 1)                        AS pm25_2018,
+       ROUND(re.sdr, 1)                         AS respiratory_sdr,
        ROUND(e.gdp_per_capita, 0)              AS gdp_per_capita,
        RANK() OVER (ORDER BY cy.pm25 DESC)     AS pollution_rank
 FROM       country_year cy
 LEFT JOIN  economy     e  ON e.key_country = cy.key_country
                          AND e.key_time    = cy.key_time
-LEFT JOIN  mortality   m  ON m.key_country = cy.key_country
-                         AND m.key_time    = cy.key_time
-                         AND m.key_cause   = (SELECT key_cause FROM dim_cause
-                                              WHERE cause = 'Respiratory diseases')
-                         AND m.key_sex     = (SELECT key_sex FROM dim_sex
-                                              WHERE sex = 'ALL')
+LEFT JOIN  resp        re ON re.key_country = cy.key_country
+                         AND re.key_time    = cy.key_time
 WHERE  cy.pm25 IS NOT NULL
 ORDER  BY cy.pm25 DESC
 LIMIT  20;
