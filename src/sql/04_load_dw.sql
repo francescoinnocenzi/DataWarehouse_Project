@@ -91,7 +91,7 @@ JOIN   dim_country dc ON dc.country_iso3 = re.country_iso3
 JOIN   dim_time dt ON dt.year = re.year
 ON CONFLICT DO NOTHING;
 
--- 8. FACT TABLE: MORTALITY (Approach 2a: OPTIONAL cause dimension)
+-- 8. FACT TABLE: MORTALITY (OPTIONAL cause dimension)
 INSERT INTO mortality (key_country, key_time, key_sex, key_cause, sdr)
 SELECT dc.key_country,
        dt.key_time,

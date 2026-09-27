@@ -5,20 +5,19 @@ A PostgreSQL data warehouse integrating **air quality**, **mortality** and **eco
 
 
 ## Table of Contents
-
-1. [Overview](#1-overview)
-2. [Data Sources](#2-data-sources)
-3. [Architecture](#3-architecture)
-   - [3.1 Staging Layer](#31-staging-layer)
-   - [3.2 Reconciled Layer](#32-reconciled-layer)
-   - [3.3 Data Warehouse Layer](#33-data-warehouse-layer)
-4. [Dimensional Model](#4-dimensional-model)
-   - [4.1 Dimensions](#41-dimensions)
-   - [4.2 Fact Tables](#42-fact-tables)
-5. [Data Quality & Reject Log](#5-data-quality--reject-log)
-6. [Project Structure](#6-project-structure)
-7. [Setup & Usage](#7-setup--usage)
-8. [OLAP Query Catalogue](#8-olap-query-catalogue)
+  - [1. Overview](#1-overview)
+  - [2. Data Sources](#2-data-sources)
+  - [3. Architecture](#3-architecture)
+    - [3.1 Staging Layer](#31-staging-layer)
+    - [3.2 Reconciled Layer](#32-reconciled-layer)
+    - [3.3 Data Warehouse Layer](#33-data-warehouse-layer)
+  - [4. Dimensional Model](#4-dimensional-model)
+    - [4.1 Dimensions](#41-dimensions)
+    - [4.2 Fact Tables](#42-fact-tables)
+  - [5. Data Quality \& Reject Log](#5-data-quality--reject-log)
+  - [6. Project Structure](#6-project-structure)
+  - [7. Setup \& Usage](#7-setup--usage)
+  - [8. OLAP Query Catalogue](#8-olap-query-catalogue)
    
 ## 1. Overview
 
@@ -84,7 +83,7 @@ Before writing any DDL, each fact was modeled conceptually as a **Dimensional Fa
 | `dim_country` | Snowflake | `country_iso3`, `country_name`, FK to `dim_region` |
 | `dim_city` | Snowflake | `city_name`, FK to `dim_country` — resolves city name homonyms (e.g. "Montana" exists in both Bulgaria and Switzerland) |
 | `dim_time` | Star | `year`, `decade` |
-| `dim_cause` | Star, optional | Only the 3 specific mortality causes; "All causes" is `key_cause IS NULL` in the fact (Approach 2a) |
+| `dim_cause` | Star, optional | Only the 3 specific mortality causes; "All causes" is `key_cause IS NULL` in the fact|
 | `dim_sex` | Star | `ALL`, `FEMALE`, `MALE` |
 | `country_eu_status` | Bridge table | Cross-dimensional attribute keyed by `(key_country, key_time)` — EU membership can change year over year |
 

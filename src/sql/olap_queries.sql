@@ -4,7 +4,7 @@
 --
 --  Two rules apply throughout and follow from the DFM integrity constraints:
 --   1. sdr and gdp_per_capita are RATES -> aggregate with AVG, never SUM.
---   2. dim_cause contains only specific causes (Approach 2a). 'All causes'
+--   2. dim_cause contains only specific causes . 'All causes'
 --      is represented by key_cause IS NULL in the mortality table.
 --      Likewise dim_sex contains 'ALL' alongside 'MALE'/'FEMALE'.
 -- =====================================================================

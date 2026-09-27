@@ -266,7 +266,7 @@ CREATE TABLE reconciled.rec_economy (
 -- Grain: one row per (country, year, sex, cause).
 -- Unlike the warehouse fact table, cause is NOT NULL here: the reconciled
 -- layer keeps 'All causes' as an ordinary label. Turning it into a NULL key
--- is the optional-dimension encoding of the DFM (Approach 2a) and therefore
+-- is the optional-dimension encoding of the DFM and therefore
 -- a warehouse decision, applied in load_dw.sql.
 -- sdr is an age-standardised RATE per 100 000: aggregate with AVG, never SUM.
 CREATE TABLE reconciled.rec_mortality (
